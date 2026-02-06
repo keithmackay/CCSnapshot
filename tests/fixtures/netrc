@@ -1,0 +1,7 @@
+machine api.anthropic.com
+  login user@example.com
+  password sk-ant-FAKE_NETRC_KEY
+
+machine github.com
+  login user
+  password ghp_FAKE_GITHUB_TOKEN

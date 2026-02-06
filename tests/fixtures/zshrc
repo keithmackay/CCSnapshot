@@ -1,0 +1,12 @@
+# Standard zsh config
+export PATH="/usr/local/bin:$PATH"
+alias ll='ls -la'
+
+# Claude-related configuration
+export ANTHROPIC_API_KEY="sk-ant-FAKE_KEY_FOR_TESTING"
+alias claude-update='npm update -g @anthropic-ai/claude-code'
+export CLAUDE_MODEL="opus"
+
+# Unrelated stuff
+export EDITOR=vim
+alias gs='git status'

@@ -1,0 +1,9 @@
+{
+  "hooks": {
+    "preToolUse": [],
+    "postToolUse": []
+  },
+  "statusLine": {
+    "enabled": true
+  }
+}
