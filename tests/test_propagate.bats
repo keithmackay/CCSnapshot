@@ -114,3 +114,20 @@ PROPAGATE_SCRIPT="${PROJECT_ROOT}/scripts/propagate.sh"
   echo "$output" | grep -q "CCSnapshot"
   echo "$output" | grep -qi "restored"
 }
+
+# --- Phase 10: Claude CLI invocation ---
+
+@test "propagate --mechanical-only does not attempt claude invocation" {
+  create_snapshot_from_fixtures
+  run "$PROPAGATE_SCRIPT" --mechanical-only
+  # Should NOT contain any message about invoking Claude
+  ! echo "$output" | grep -qi "invoking claude\|launching claude\|starting claude agent"
+}
+
+@test "propagate without --mechanical-only handles missing claude gracefully" {
+  create_snapshot_from_fixtures
+  # Ensure claude is not on PATH by using a restricted PATH
+  PATH="/usr/bin:/bin" run "$PROPAGATE_SCRIPT"
+  [[ "$status" -eq 0 ]]
+  echo "$output" | grep -qi "claude.*not found\|install claude\|claude code.*not.*available"
+}
