@@ -163,3 +163,81 @@ COLLECT_SCRIPT="${PROJECT_ROOT}/scripts/collect.sh"
   [[ ! -f "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment" ]]
   [[ ! -f "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/bashrc.fragment" ]]
 }
+
+# --- Phase 5: Secrets detection and manifest generation ---
+
+@test "collect generates manifest.json" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json" ]]
+  # Must be valid JSON
+  jq . "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json" >/dev/null
+}
+
+@test "manifest contains version 1.0" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  local version
+  version=$(jq -r '.version' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")
+  [[ "$version" == "1.0" ]]
+}
+
+@test "manifest contains sourceOS" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  local os
+  os=$(jq -r '.sourceOS' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")
+  [[ -n "$os" ]]
+  [[ "$os" != "null" ]]
+}
+
+@test "manifest contains sourceShell" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  local shell
+  shell=$(jq -r '.sourceShell' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")
+  [[ -n "$shell" ]]
+  [[ "$shell" != "null" ]]
+}
+
+@test "manifest contains collectedAt timestamp" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  local ts
+  ts=$(jq -r '.collectedAt' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")
+  [[ "$ts" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]]
+}
+
+@test "manifest lists collected artifacts" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  local artifacts
+  artifacts=$(jq '.artifacts' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")
+  [[ "$artifacts" != "null" ]]
+  # Should have global section
+  [[ "$(jq -r '.artifacts.global' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")" != "null" ]]
+}
+
+@test "manifest detects ANTHROPIC_API_KEY from shell fragments" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  local secrets
+  secrets=$(jq '.secretsNeeded' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")
+  echo "$secrets" | grep -q "ANTHROPIC_API_KEY"
+}
+
+@test "manifest detects netrc entries" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  local secrets
+  secrets=$(jq -r '.secretsNeeded[].name' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")
+  echo "$secrets" | grep -q "anthropic.com"
+}
+
+@test "manifest never contains secret values" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  # The fake API key should NOT appear anywhere in the manifest
+  ! grep -q "sk-ant-FAKE" "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json"
+  ! grep -q "ghp_FAKE" "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json"
+}
