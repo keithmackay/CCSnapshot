@@ -61,3 +61,37 @@ COLLECT_SCRIPT="${PROJECT_ROOT}/scripts/collect.sh"
   run "$COLLECT_SCRIPT"
   [[ "$status" -eq 0 ]]
 }
+
+# --- Phase 2: Commands and skills collection ---
+
+@test "collect copies command files" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/commands/bootstrap.md" ]]
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/commands/review.md" ]]
+  diff "${FAKE_HOME}/.claude/commands/bootstrap.md" "${CCSNAPSHOT_OUTPUT_DIR}/commands/bootstrap.md"
+}
+
+@test "collect copies skill directories" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  [[ -d "${CCSNAPSHOT_OUTPUT_DIR}/skills/sample-skill" ]]
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/skills/sample-skill/skill.md" ]]
+  diff "${FAKE_HOME}/.claude/skills/sample-skill/skill.md" "${CCSNAPSHOT_OUTPUT_DIR}/skills/sample-skill/skill.md"
+}
+
+@test "collect skips commands dir when missing" {
+  populate_global_fixtures
+  rm -rf "${FAKE_HOME}/.claude/commands"
+  run "$COLLECT_SCRIPT"
+  [[ "$status" -eq 0 ]]
+  [[ ! -d "${CCSNAPSHOT_OUTPUT_DIR}/commands" ]]
+}
+
+@test "collect skips skills dir when missing" {
+  populate_global_fixtures
+  rm -rf "${FAKE_HOME}/.claude/skills"
+  run "$COLLECT_SCRIPT"
+  [[ "$status" -eq 0 ]]
+  [[ ! -d "${CCSNAPSHOT_OUTPUT_DIR}/skills" ]]
+}
