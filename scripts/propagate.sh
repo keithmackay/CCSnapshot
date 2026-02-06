@@ -89,9 +89,81 @@ restore_plugins() {
   fi
 }
 
+# --- Shell fragment display ---
+
+display_shell_fragments() {
+  local fragments_dir="${INPUT_DIR}/shell-fragments"
+
+  if [[ ! -d "$fragments_dir" ]] || [[ -z "$(ls -A "$fragments_dir" 2>/dev/null)" ]]; then
+    return 0
+  fi
+
+  echo ""
+  echo "Shell fragments to merge (review before adding to your shell config):"
+  echo "----------------------------------------------------------------------"
+
+  for fragment in "$fragments_dir"/*.fragment; do
+    [[ -f "$fragment" ]] || continue
+    local name
+    name=$(basename "$fragment")
+    echo ""
+    echo "  From: ${name%.fragment}"
+    while IFS= read -r line; do
+      echo "    $line"
+    done < "$fragment"
+  done
+
+  echo "----------------------------------------------------------------------"
+  echo ""
+}
+
+# --- Propagation summary ---
+
+print_summary() {
+  local global_count=0
+  local cmd_count=0
+  local skill_count=0
+  local plugin_status="-"
+  local backup_count=0
+
+  if [[ -d "${HOME}/.claude" ]]; then
+    backup_count=$(find "${HOME}/.claude" -name "*.bak" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  if [[ -f "${HOME}/.claude.json.bak" ]]; then
+    backup_count=$((backup_count + 1))
+  fi
+  if [[ -d "${INPUT_DIR}/global" ]]; then
+    global_count=$(ls "${INPUT_DIR}/global/" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  if [[ -d "${INPUT_DIR}/commands" ]]; then
+    cmd_count=$(ls "${INPUT_DIR}/commands/" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  if [[ -d "${INPUT_DIR}/skills" ]]; then
+    skill_count=$(ls "${INPUT_DIR}/skills/" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  if [[ -d "${INPUT_DIR}/plugins" ]]; then
+    plugin_status="restored"
+  fi
+
+  echo ""
+  echo "CCSnapshot: Propagation complete (mechanical)"
+  echo "  Global config:   ${global_count} files restored"
+  echo "  Commands:        ${cmd_count} files restored"
+  echo "  Skills:          ${skill_count} directories restored"
+  echo "  Plugins:         ${plugin_status}"
+  if [[ "$backup_count" -gt 0 ]]; then
+    echo "  Backups:         ${backup_count} files backed up (.bak)"
+  fi
+  if [[ -d "${INPUT_DIR}/shell-fragments" ]]; then
+    echo "  Shell fragments: displayed above (manual merge needed)"
+  fi
+}
+
 # --- Main ---
 
 restore_global_config
 restore_commands
 restore_skills
 restore_plugins
+display_shell_fragments
+print_summary
