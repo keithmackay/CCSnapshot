@@ -57,8 +57,19 @@ collect_skills() {
   fi
 }
 
+# --- Plugin collection ---
+
+collect_plugins() {
+  local plugins_dir="${HOME}/.claude/plugins"
+
+  if [[ -d "$plugins_dir" ]] && [[ -n "$(ls -A "$plugins_dir" 2>/dev/null)" ]]; then
+    rsync -a --exclude '.DS_Store' "${plugins_dir}/" "${OUTPUT_DIR}/plugins/"
+  fi
+}
+
 # --- Main ---
 
 collect_global_config
 collect_commands
 collect_skills
+collect_plugins
