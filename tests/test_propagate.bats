@@ -98,3 +98,19 @@ PROPAGATE_SCRIPT="${PROJECT_ROOT}/scripts/propagate.sh"
   run "$PROPAGATE_SCRIPT" --mechanical-only
   [[ ! -f "${FAKE_HOME}/.claude/CLAUDE.md.bak" ]]
 }
+
+# --- Phase 9: Shell fragment display and summary ---
+
+@test "propagate displays shell fragments" {
+  create_snapshot_from_fixtures
+  run "$PROPAGATE_SCRIPT" --mechanical-only
+  echo "$output" | grep -qi "shell fragment"
+  echo "$output" | grep -q "ANTHROPIC_API_KEY"
+}
+
+@test "propagate displays propagation summary" {
+  create_snapshot_from_fixtures
+  run "$PROPAGATE_SCRIPT" --mechanical-only
+  echo "$output" | grep -q "CCSnapshot"
+  echo "$output" | grep -qi "restored"
+}
