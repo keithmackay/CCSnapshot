@@ -241,3 +241,56 @@ COLLECT_SCRIPT="${PROJECT_ROOT}/scripts/collect.sh"
   ! grep -q "sk-ant-FAKE" "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json"
   ! grep -q "ghp_FAKE" "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json"
 }
+
+# --- Phase 6: --project flag ---
+
+@test "collect copies project CLAUDE.md with --project flag" {
+  populate_global_fixtures
+  local project_path
+  project_path=$(populate_project_fixture "project-alpha")
+  run "$COLLECT_SCRIPT" --project "$project_path"
+  [[ "$status" -eq 0 ]]
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/projects/project-alpha/CLAUDE.md" ]]
+  diff "${project_path}/CLAUDE.md" "${CCSNAPSHOT_OUTPUT_DIR}/projects/project-alpha/CLAUDE.md"
+}
+
+@test "collect copies project .claude/ directory with --project flag" {
+  populate_global_fixtures
+  local project_path
+  project_path=$(populate_project_fixture "project-alpha")
+  run "$COLLECT_SCRIPT" --project "$project_path"
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/projects/project-alpha/.claude/settings.local.json" ]]
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/projects/project-alpha/.claude/commands/deploy.md" ]]
+}
+
+@test "collect handles multiple --project flags" {
+  populate_global_fixtures
+  local project_path
+  project_path=$(populate_project_fixture "project-alpha")
+  # Create a second project fixture inline
+  local project2="${TEST_TEMP_DIR}/projects/project-beta"
+  mkdir -p "$project2"
+  echo "Beta project rules" > "$project2/CLAUDE.md"
+  run "$COLLECT_SCRIPT" --project "$project_path" --project "$project2"
+  [[ "$status" -eq 0 ]]
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/projects/project-alpha/CLAUDE.md" ]]
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/projects/project-beta/CLAUDE.md" ]]
+}
+
+@test "collect warns and continues for invalid project path" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT" --project "/nonexistent/project"
+  [[ "$status" -eq 0 ]]
+  echo "$output" | grep -qi "warn\|skip\|not found\|does not exist"
+}
+
+@test "manifest includes projects in artifacts" {
+  populate_global_fixtures
+  local project_path
+  project_path=$(populate_project_fixture "project-alpha")
+  run "$COLLECT_SCRIPT" --project "$project_path"
+  local projects
+  projects=$(jq '.artifacts.projects' "${CCSNAPSHOT_OUTPUT_DIR}/manifest.json")
+  [[ "$projects" != "null" ]]
+  echo "$projects" | grep -q "project-alpha"
+}
