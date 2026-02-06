@@ -119,3 +119,47 @@ COLLECT_SCRIPT="${PROJECT_ROOT}/scripts/collect.sh"
   [[ "$status" -eq 0 ]]
   [[ ! -d "${CCSNAPSHOT_OUTPUT_DIR}/plugins" ]]
 }
+
+# --- Phase 4: Shell fragment extraction ---
+
+@test "collect extracts zshrc fragments" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment" ]]
+  # Should contain Claude-related lines
+  grep -q "ANTHROPIC_API_KEY" "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment"
+  grep -q "claude-update" "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment"
+  grep -q "CLAUDE_MODEL" "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment"
+}
+
+@test "collect extracts bashrc fragments" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/bashrc.fragment" ]]
+  grep -q "ANTHROPIC_API_KEY" "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/bashrc.fragment"
+}
+
+@test "collect excludes non-matching lines from fragments" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  # Lines like "alias ll" and "export EDITOR" should NOT appear
+  ! grep -q "alias ll" "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment"
+  ! grep -q "EDITOR=vim" "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment"
+  ! grep -q "JAVA_HOME" "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/bashrc.fragment"
+}
+
+@test "collect annotates fragment lines with source info" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  # Each matching line should have a source annotation
+  grep -q "^# source:.*\.zshrc:" "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment"
+}
+
+@test "collect handles missing shell configs gracefully" {
+  populate_global_fixtures
+  rm -f "${FAKE_HOME}/.zshrc" "${FAKE_HOME}/.bashrc"
+  run "$COLLECT_SCRIPT"
+  [[ "$status" -eq 0 ]]
+  [[ ! -f "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/zshrc.fragment" ]]
+  [[ ! -f "${CCSNAPSHOT_OUTPUT_DIR}/shell-fragments/bashrc.fragment" ]]
+}
