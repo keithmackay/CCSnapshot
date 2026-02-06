@@ -278,7 +278,57 @@ generate_manifest() {
     }' > "${OUTPUT_DIR}/manifest.json"
 }
 
+# --- Summary output ---
+
+print_summary() {
+  local global_count=0
+  local cmd_count=0
+  local skill_count=0
+  local plugin_status="-"
+  local fragment_count=0
+  local project_count=0
+  local secret_count=0
+
+  if [[ -d "${OUTPUT_DIR}/global" ]]; then
+    global_count=$(ls "${OUTPUT_DIR}/global/" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  if [[ -d "${OUTPUT_DIR}/commands" ]]; then
+    cmd_count=$(ls "${OUTPUT_DIR}/commands/" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  if [[ -d "${OUTPUT_DIR}/skills" ]]; then
+    skill_count=$(ls "${OUTPUT_DIR}/skills/" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  if [[ -d "${OUTPUT_DIR}/plugins" ]]; then
+    plugin_status="collected"
+  fi
+  if [[ -d "${OUTPUT_DIR}/shell-fragments" ]]; then
+    fragment_count=$(ls "${OUTPUT_DIR}/shell-fragments/" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  project_count=$(echo "$COLLECTED_PROJECTS" | jq 'length')
+  if [[ -f "${OUTPUT_DIR}/manifest.json" ]]; then
+    secret_count=$(jq '.secretsNeeded | length' "${OUTPUT_DIR}/manifest.json")
+  fi
+
+  echo ""
+  echo "CCSnapshot: Collection complete"
+  echo "  Global config:   ${global_count} files"
+  echo "  Commands:        ${cmd_count} files"
+  echo "  Skills:          ${skill_count} directories"
+  echo "  Plugins:         ${plugin_status}"
+  echo "  Shell fragments: ${fragment_count} files"
+  echo "  Projects:        ${project_count}"
+  if [[ "$secret_count" -gt 0 ]]; then
+    echo "  Secrets found:   ${secret_count} (recorded in manifest, values NOT collected)"
+  fi
+  echo "  Manifest:        ${OUTPUT_DIR}/manifest.json"
+}
+
 # --- Main ---
+
+# Clean previous snapshot for idempotency
+if [[ -d "$OUTPUT_DIR" ]]; then
+  rm -rf "$OUTPUT_DIR"
+fi
 
 collect_global_config
 collect_commands
@@ -287,3 +337,4 @@ collect_plugins
 collect_shell_fragments
 collect_projects
 generate_manifest
+print_summary
