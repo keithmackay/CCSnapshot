@@ -103,6 +103,120 @@ collect_shell_fragments() {
   extract_shell_fragments "${HOME}/.profile" "profile"
 }
 
+# --- Secrets detection ---
+
+# Scan shell fragments and netrc for secret references.
+# Records names and locations only — never values.
+# Outputs a JSON array of {name, location} objects.
+detect_secrets() {
+  local secrets_json="[]"
+
+  # Scan shell fragment files for secret-like exports
+  if [[ -d "${OUTPUT_DIR}/shell-fragments" ]]; then
+    for fragment in "${OUTPUT_DIR}/shell-fragments"/*.fragment; do
+      [[ -f "$fragment" ]] || continue
+      while IFS= read -r line; do
+        # Skip annotation lines
+        [[ "$line" =~ ^#\ source: ]] && continue
+        # Look for export VAR_NAME patterns with KEY/TOKEN/SECRET in the name
+        if echo "$line" | grep -qE 'export\s+\w*(API_KEY|TOKEN|SECRET)\w*='; then
+          local var_name
+          var_name=$(echo "$line" | grep -oE '\w*(API_KEY|TOKEN|SECRET)\w*' | head -1)
+          secrets_json=$(echo "$secrets_json" | jq --arg name "$var_name" --arg loc "shell_config" \
+            '. + [{"name": $name, "location": $loc}]')
+        fi
+      done < "$fragment"
+    done
+  fi
+
+  # Scan netrc for anthropic/github entries
+  if [[ -f "${HOME}/.netrc" ]]; then
+    while IFS= read -r line; do
+      if echo "$line" | grep -q 'machine'; then
+        local machine
+        machine=$(echo "$line" | awk '{print $2}')
+        if [[ -n "$machine" ]]; then
+          secrets_json=$(echo "$secrets_json" | jq --arg name "netrc:${machine}" --arg loc "netrc" \
+            '. + [{"name": $name, "location": $loc}]')
+        fi
+      fi
+    done < "${HOME}/.netrc"
+  fi
+
+  # Deduplicate by name
+  echo "$secrets_json" | jq 'unique_by(.name)'
+}
+
+# --- Manifest generation ---
+
+generate_manifest() {
+  mkdir -p "${OUTPUT_DIR}"
+
+  local secrets_json
+  secrets_json=$(detect_secrets)
+
+  # Build artifacts object based on what was actually collected
+  local artifacts="{}"
+
+  if [[ -d "${OUTPUT_DIR}/global" ]]; then
+    local global_files
+    global_files=$(ls "${OUTPUT_DIR}/global/" 2>/dev/null | jq -R . | jq -s .)
+    artifacts=$(echo "$artifacts" | jq --argjson files "$global_files" '.global = $files')
+  fi
+
+  if [[ -d "${OUTPUT_DIR}/commands" ]]; then
+    local cmd_files
+    cmd_files=$(ls "${OUTPUT_DIR}/commands/" 2>/dev/null | jq -R . | jq -s .)
+    artifacts=$(echo "$artifacts" | jq --argjson files "$cmd_files" '.commands = $files')
+  fi
+
+  if [[ -d "${OUTPUT_DIR}/skills" ]]; then
+    local skill_dirs
+    skill_dirs=$(ls "${OUTPUT_DIR}/skills/" 2>/dev/null | jq -R . | jq -s .)
+    artifacts=$(echo "$artifacts" | jq --argjson files "$skill_dirs" '.skills = $files')
+  fi
+
+  if [[ -d "${OUTPUT_DIR}/plugins" ]]; then
+    artifacts=$(echo "$artifacts" | jq '.plugins = true')
+  fi
+
+  if [[ -d "${OUTPUT_DIR}/shell-fragments" ]]; then
+    local frag_files
+    frag_files=$(ls "${OUTPUT_DIR}/shell-fragments/" 2>/dev/null | jq -R . | jq -s .)
+    artifacts=$(echo "$artifacts" | jq --argjson files "$frag_files" '.shellFragments = $files')
+  fi
+
+  local source_os
+  source_os=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+  local source_shell
+  source_shell=$(basename "${SHELL:-unknown}")
+
+  local claude_path
+  claude_path=$(command -v claude 2>/dev/null || echo "not found")
+
+  local collected_at
+  collected_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+  jq -n \
+    --arg version "1.0" \
+    --arg sourceOS "$source_os" \
+    --arg sourceShell "$source_shell" \
+    --arg claudeInstallPath "$claude_path" \
+    --arg collectedAt "$collected_at" \
+    --argjson artifacts "$artifacts" \
+    --argjson secretsNeeded "$secrets_json" \
+    '{
+      version: $version,
+      sourceOS: $sourceOS,
+      sourceShell: $sourceShell,
+      claudeInstallPath: $claudeInstallPath,
+      collectedAt: $collectedAt,
+      artifacts: $artifacts,
+      secretsNeeded: $secretsNeeded
+    }' > "${OUTPUT_DIR}/manifest.json"
+}
+
 # --- Main ---
 
 collect_global_config
@@ -110,3 +224,4 @@ collect_commands
 collect_skills
 collect_plugins
 collect_shell_fragments
+generate_manifest
