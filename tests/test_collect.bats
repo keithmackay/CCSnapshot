@@ -294,3 +294,42 @@ COLLECT_SCRIPT="${PROJECT_ROOT}/scripts/collect.sh"
   [[ "$projects" != "null" ]]
   echo "$projects" | grep -q "project-alpha"
 }
+
+# --- Phase 7: Idempotency and summary ---
+
+@test "collect is idempotent — running twice produces same output" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  # Save first run's file list (excluding manifest timestamp)
+  local first_run
+  first_run=$(find "${CCSNAPSHOT_OUTPUT_DIR}" -type f ! -name manifest.json | sort)
+  # Run again
+  run "$COLLECT_SCRIPT"
+  local second_run
+  second_run=$(find "${CCSNAPSHOT_OUTPUT_DIR}" -type f ! -name manifest.json | sort)
+  [[ "$first_run" == "$second_run" ]]
+}
+
+@test "collect cleans previous snapshot before writing" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  # Create a stale file in the snapshot dir
+  echo "stale" > "${CCSNAPSHOT_OUTPUT_DIR}/stale-file.txt"
+  run "$COLLECT_SCRIPT"
+  [[ ! -f "${CCSNAPSHOT_OUTPUT_DIR}/stale-file.txt" ]]
+}
+
+@test "collect prints summary to stdout" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  echo "$output" | grep -q "CCSnapshot"
+  echo "$output" | grep -qi "commands"
+  echo "$output" | grep -qi "skills"
+}
+
+@test "collect summary includes counts" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  # Should mention number of commands (2 in our fixtures)
+  echo "$output" | grep -q "2"
+}
