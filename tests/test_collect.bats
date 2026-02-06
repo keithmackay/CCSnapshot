@@ -95,3 +95,27 @@ COLLECT_SCRIPT="${PROJECT_ROOT}/scripts/collect.sh"
   [[ "$status" -eq 0 ]]
   [[ ! -d "${CCSNAPSHOT_OUTPUT_DIR}/skills" ]]
 }
+
+# --- Phase 3: Plugin collection ---
+
+@test "collect copies installed_plugins.json" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/plugins/installed_plugins.json" ]]
+  diff "${FAKE_HOME}/.claude/plugins/installed_plugins.json" "${CCSNAPSHOT_OUTPUT_DIR}/plugins/installed_plugins.json"
+}
+
+@test "collect copies plugin cache" {
+  populate_global_fixtures
+  run "$COLLECT_SCRIPT"
+  [[ -d "${CCSNAPSHOT_OUTPUT_DIR}/plugins/cache/sample-plugin" ]]
+  [[ -f "${CCSNAPSHOT_OUTPUT_DIR}/plugins/cache/sample-plugin/index.js" ]]
+}
+
+@test "collect skips plugins dir when missing" {
+  populate_global_fixtures
+  rm -rf "${FAKE_HOME}/.claude/plugins"
+  run "$COLLECT_SCRIPT"
+  [[ "$status" -eq 0 ]]
+  [[ ! -d "${CCSNAPSHOT_OUTPUT_DIR}/plugins" ]]
+}
