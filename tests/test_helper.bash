@@ -45,6 +45,19 @@ populate_global_fixtures() {
   fi
 }
 
+# Run collect against fixtures to produce a snapshot for propagate tests.
+# Populates CCSNAPSHOT_INPUT_DIR with a valid snapshot.
+create_snapshot_from_fixtures() {
+  populate_global_fixtures
+  local saved_output="${CCSNAPSHOT_OUTPUT_DIR}"
+  export CCSNAPSHOT_OUTPUT_DIR="${CCSNAPSHOT_INPUT_DIR}"
+  "${PROJECT_ROOT}/scripts/collect.sh" "$@" >/dev/null 2>&1
+  export CCSNAPSHOT_OUTPUT_DIR="${saved_output}"
+  # Reset HOME to a clean state for propagation
+  rm -rf "${FAKE_HOME}"
+  mkdir -p "${FAKE_HOME}"
+}
+
 # Copy a fixture project directory into the test temp area.
 # Returns the path to the copied project.
 populate_project_fixture() {
