@@ -39,6 +39,26 @@ collect_global_config() {
   fi
 }
 
+# --- Commands and skills collection ---
+
+collect_commands() {
+  local commands_dir="${HOME}/.claude/commands"
+
+  if [[ -d "$commands_dir" ]] && [[ -n "$(ls -A "$commands_dir" 2>/dev/null)" ]]; then
+    rsync -a --exclude '.DS_Store' "${commands_dir}/" "${OUTPUT_DIR}/commands/"
+  fi
+}
+
+collect_skills() {
+  local skills_dir="${HOME}/.claude/skills"
+
+  if [[ -d "$skills_dir" ]] && [[ -n "$(ls -A "$skills_dir" 2>/dev/null)" ]]; then
+    rsync -a --exclude '.DS_Store' "${skills_dir}/" "${OUTPUT_DIR}/skills/"
+  fi
+}
+
 # --- Main ---
 
 collect_global_config
+collect_commands
+collect_skills
