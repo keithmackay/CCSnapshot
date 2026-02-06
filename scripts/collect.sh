@@ -67,9 +67,46 @@ collect_plugins() {
   fi
 }
 
+# --- Shell fragment extraction ---
+
+# Extract lines matching Claude/Anthropic patterns from a shell config file.
+# Writes matching lines with source annotations to a fragment file.
+extract_shell_fragments() {
+  local source_file="$1"
+  local fragment_name="$2"
+
+  if [[ ! -f "$source_file" ]]; then
+    return 0
+  fi
+
+  local fragment_file="${OUTPUT_DIR}/shell-fragments/${fragment_name}.fragment"
+  local lineno=0
+  local found_match=false
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    lineno=$((lineno + 1))
+    if echo "$line" | grep -iq 'claude\|anthropic'; then
+      if [[ "$found_match" == false ]]; then
+        mkdir -p "${OUTPUT_DIR}/shell-fragments"
+        found_match=true
+      fi
+      echo "# source: ${source_file}:${lineno}" >> "$fragment_file"
+      echo "$line" >> "$fragment_file"
+    fi
+  done < "$source_file"
+}
+
+collect_shell_fragments() {
+  extract_shell_fragments "${HOME}/.zshrc" "zshrc"
+  extract_shell_fragments "${HOME}/.bashrc" "bashrc"
+  extract_shell_fragments "${HOME}/.bash_profile" "bash_profile"
+  extract_shell_fragments "${HOME}/.profile" "profile"
+}
+
 # --- Main ---
 
 collect_global_config
 collect_commands
 collect_skills
 collect_plugins
+collect_shell_fragments
