@@ -159,6 +159,39 @@ print_summary() {
   fi
 }
 
+# --- Claude agent invocation ---
+
+invoke_claude_agent() {
+  if [[ "$MECHANICAL_ONLY" == true ]]; then
+    return 0
+  fi
+
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local prompt_file="${script_dir}/../prompts/propagate.md"
+
+  if [[ ! -f "$prompt_file" ]]; then
+    echo "Warning: Claude agent prompt not found at ${prompt_file}" >&2
+    echo "Skipping intelligent adaptation phase." >&2
+    return 0
+  fi
+
+  if ! command -v claude &>/dev/null; then
+    echo ""
+    echo "Claude Code is not available on this machine."
+    echo "Install it to run the intelligent adaptation phase:"
+    echo "  npm install -g @anthropic-ai/claude-code"
+    echo ""
+    echo "Then re-run without --mechanical-only:"
+    echo "  ./scripts/propagate.sh"
+    return 0
+  fi
+
+  echo ""
+  echo "Launching Claude agent for intelligent adaptation..."
+  claude --print "$(cat "$prompt_file")"
+}
+
 # --- Main ---
 
 restore_global_config
@@ -167,3 +200,4 @@ restore_skills
 restore_plugins
 display_shell_fragments
 print_summary
+invoke_claude_agent
