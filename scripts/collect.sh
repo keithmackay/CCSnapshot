@@ -6,6 +6,28 @@ set -euo pipefail
 
 OUTPUT_DIR="${CCSNAPSHOT_OUTPUT_DIR:-./snapshot}"
 
+# --- Argument parsing ---
+
+PROJECT_PATHS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --project)
+      if [[ -n "${2:-}" ]]; then
+        PROJECT_PATHS+=("$2")
+        shift 2
+      else
+        echo "Error: --project requires a path argument" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
 # --- Dependency check ---
 
 if ! command -v jq &>/dev/null; then
@@ -103,6 +125,41 @@ collect_shell_fragments() {
   extract_shell_fragments "${HOME}/.profile" "profile"
 }
 
+# --- Project collection ---
+
+COLLECTED_PROJECTS="[]"
+
+collect_projects() {
+  if [[ ${#PROJECT_PATHS[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  for project_path in "${PROJECT_PATHS[@]}"; do
+    if [[ ! -d "$project_path" ]]; then
+      echo "Warning: project path does not exist, skipping: $project_path" >&2
+      continue
+    fi
+
+    local project_name
+    project_name=$(basename "$project_path")
+    local dest="${OUTPUT_DIR}/projects/${project_name}"
+    mkdir -p "$dest"
+
+    if [[ -f "${project_path}/CLAUDE.md" ]]; then
+      cp "${project_path}/CLAUDE.md" "${dest}/CLAUDE.md"
+    fi
+
+    if [[ -d "${project_path}/.claude" ]]; then
+      rsync -a --exclude '.DS_Store' "${project_path}/.claude/" "${dest}/.claude/"
+    fi
+
+    COLLECTED_PROJECTS=$(echo "$COLLECTED_PROJECTS" | jq \
+      --arg name "$project_name" \
+      --arg path "$project_path" \
+      '. + [{"name": $name, "sourcePath": $path}]')
+  done
+}
+
 # --- Secrets detection ---
 
 # Scan shell fragments and netrc for secret references.
@@ -186,6 +243,10 @@ generate_manifest() {
     artifacts=$(echo "$artifacts" | jq --argjson files "$frag_files" '.shellFragments = $files')
   fi
 
+  if [[ "$(echo "$COLLECTED_PROJECTS" | jq 'length')" -gt 0 ]]; then
+    artifacts=$(echo "$artifacts" | jq --argjson projects "$COLLECTED_PROJECTS" '.projects = $projects')
+  fi
+
   local source_os
   source_os=$(uname -s | tr '[:upper:]' '[:lower:]')
 
@@ -224,4 +285,5 @@ collect_commands
 collect_skills
 collect_plugins
 collect_shell_fragments
+collect_projects
 generate_manifest
