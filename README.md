@@ -1,8 +1,32 @@
 # CCSnapshot
 
-## Description
+Collect, version, and restore Claude Code personalizations across machines. CCSnapshot captures your CLAUDE.md files (both project-level and global), aliases, Claude configurations, plugins, commands, agents, and skills into a portable repository structure. A companion restore script deploys those settings onto a new machine, using Claude itself to evaluate the destination environment and adapt paths, shell configs, and token requirements accordingly.
 
-CCSnapshot is a command-line tool for collecting, versioning, and restoring Claude Code personalizations across machines. It captures your CLAUDE.md files (both project-level and global), aliases, Claude configurations, plugins, commands, agents, and skills into a portable repository structure. A companion restore script deploys those settings onto a new machine, using Claude itself to evaluate the destination environment and adapt paths, shell configs, and token requirements accordingly.
+## Highlights
+
+- **Deterministic collection** — no LLM, no network. Collect runs in seconds and produces identical output on repeated runs.
+- **Intelligent propagation** — mechanical file copy handles the predictable parts; Claude handles environment adaptation, shell merging, and secrets guidance.
+- **Cross-platform** — Bash scripts for macOS/Linux, PowerShell scripts for Windows. The snapshot format is portable between them.
+- **Secrets-aware, never secrets-collecting** — detects API keys and tokens, records their names in the manifest, but never copies values.
+- **Backup-safe** — propagation creates `.bak` files before overwriting anything.
+
+## Getting Started
+
+### Prerequisites
+
+- **Bash** (macOS/Linux) or **PowerShell** (Windows)
+- **jq** — JSON processing (`brew install jq` on macOS, `apt-get install jq` on Linux)
+- **rsync** — directory copying (pre-installed on macOS/Linux)
+- **git** — for cloning and submodule initialization
+- **Claude Code CLI** — only needed for the intelligent propagation phase (`npm install -g @anthropic-ai/claude-code`)
+
+### Installation
+
+```bash
+git clone git@github.com:keithmackay/CCSnapshot.git
+cd CCSnapshot
+git submodule update --init
+```
 
 ## Architecture
 
@@ -34,10 +58,20 @@ The collect script walks known locations and copies artifacts into `snapshot/`. 
 
 ```bash
 # Collect global config only
-./collect.sh
+./scripts/collect.sh
 
 # Collect global + specific projects
-./collect.sh --project ~/Projects/MyApp --project ~/Projects/OtherApp
+./scripts/collect.sh --project ~/Projects/MyApp --project ~/Projects/OtherApp
+```
+
+On Windows:
+
+```powershell
+# Collect global config only
+.\scripts\collect.ps1
+
+# Collect global + specific projects
+.\scripts\collect.ps1 -Project ~\Projects\MyApp, ~\Projects\OtherApp
 ```
 
 ### What It Collects
@@ -57,6 +91,26 @@ Secrets are never collected. The collect script scans for patterns like `ANTHROP
 ## Propagate Script
 
 The propagate script has two phases: a mechanical phase (scripted) and an intelligent phase (Claude agent).
+
+### Usage
+
+```bash
+# Full propagation (mechanical + Claude agent)
+./scripts/propagate.sh
+
+# Mechanical only (no Claude agent)
+./scripts/propagate.sh --mechanical-only
+```
+
+On Windows:
+
+```powershell
+# Full propagation
+.\scripts\propagate.ps1
+
+# Mechanical only
+.\scripts\propagate.ps1 -MechanicalOnly
+```
 
 ### Phase 1 - Mechanical (no LLM)
 
@@ -88,10 +142,49 @@ After the mechanical copy, the script invokes Claude Code CLI with `prompts/prop
 - **Idempotency**: Collecting twice overwrites the previous snapshot (git tracks the diff). Propagating twice is safe via backups and duplicate detection.
 - **No network required for collect**: The collect step is entirely local. Propagate only needs network for the optional GitHub clone and Claude's environment evaluation.
 
-## Installation
+## Development
 
-*Coming soon*
+### Project Layout
+
+```
+scripts/         # collect and propagate scripts (bash + PowerShell)
+prompts/         # Claude agent prompt for intelligent propagation
+tests/           # bats-core test files, fixtures, and helper
+  bats/          # bats-core git submodule
+  fixtures/      # mock Claude Code environment for testing
+docs/            # implementation plan and phase summary
+```
+
+### Running Tests
+
+Tests use [bats-core](https://github.com/bats-core/bats-core) (included as a git submodule). Each test runs against a temporary fake `$HOME` populated from fixtures, so nothing touches your real config.
+
+```bash
+# Run all tests
+./tests/bats/bin/bats tests/test_collect.bats tests/test_propagate.bats
+
+# Run just collect tests
+./tests/bats/bin/bats tests/test_collect.bats
+
+# Run just propagate tests
+./tests/bats/bin/bats tests/test_propagate.bats
+```
+
+### Environment Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `CCSNAPSHOT_OUTPUT_DIR` | Where collect writes the snapshot | `./snapshot` |
+| `CCSNAPSHOT_INPUT_DIR` | Where propagate reads the snapshot | `./snapshot` |
+
+## Contributing
+
+Contributions are welcome. Fork the repo, create a branch, and open a pull request.
+
+- Write tests first — this project follows TDD. Every change should have a corresponding bats test.
+- Keep collect deterministic — no network calls, no LLM invocations.
+- Run the full test suite before submitting.
 
 ## License
 
-*Coming soon*
+[MIT](LICENSE)
