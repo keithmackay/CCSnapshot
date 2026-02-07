@@ -1,0 +1,62 @@
+name: Bug Report
+description: Report something that isn't working correctly
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened?
+      placeholder: A clear description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Exact commands or steps to reproduce the issue.
+      placeholder: |
+        1. Run `./scripts/collect.sh --project ~/MyProject`
+        2. Observe error output
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include error messages or output.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Linux
+        - Windows
+    validations:
+      required: true
+  - type: input
+    id: shell
+    attributes:
+      label: Shell
+      description: "Output of `echo $SHELL` or PowerShell version"
+      placeholder: "/bin/zsh"
+    validations:
+      required: true
+  - type: input
+    id: jq-version
+    attributes:
+      label: jq Version
+      description: "Output of `jq --version`"
+      placeholder: "jq-1.7"
+    validations:
+      required: false
