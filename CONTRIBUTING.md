@@ -25,9 +25,9 @@ git submodule update --init
 
 ### Prerequisites
 
-- Bash (macOS/Linux)
-- jq (`brew install jq` or `apt-get install jq`)
-- rsync (pre-installed on macOS/Linux)
+- Bash (macOS/Linux) or PowerShell (Windows)
+- jq — macOS/Linux only (`brew install jq` or `apt-get install jq`)
+- rsync — macOS/Linux only (pre-installed on most systems)
 
 ### Running Tests
 

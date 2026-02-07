@@ -14,11 +14,13 @@ Collect, version, and restore Claude Code personalizations across machines. CCSn
 
 ### Prerequisites
 
-- **Bash** (macOS/Linux) or **PowerShell** (Windows)
-- **jq** — JSON processing (`brew install jq` on macOS, `apt-get install jq` on Linux)
-- **rsync** — directory copying (pre-installed on macOS/Linux)
 - **git** — for cloning and submodule initialization
+- **Bash** (macOS/Linux) or **PowerShell** (Windows)
+- **jq** — JSON processing, macOS/Linux only (`brew install jq` on macOS, `apt-get install jq` on Linux)
+- **rsync** — directory copying, macOS/Linux only (pre-installed on most systems)
 - **Claude Code CLI** — only needed for the intelligent propagation phase (`npm install -g @anthropic-ai/claude-code`)
+
+The PowerShell scripts use built-in cmdlets (`Copy-Item`, `ConvertTo-Json`) and have no external dependencies.
 
 ### Setup
 
