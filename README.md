@@ -20,13 +20,37 @@ Collect, version, and restore Claude Code personalizations across machines. CCSn
 - **git** — for cloning and submodule initialization
 - **Claude Code CLI** — only needed for the intelligent propagation phase (`npm install -g @anthropic-ai/claude-code`)
 
-### Installation
+### Setup
+
+Fork this repo on GitHub so you have your own copy, then clone your fork:
 
 ```bash
-git clone git@github.com:keithmackay/CCSnapshot.git
+git clone git@github.com:<your-username>/CCSnapshot.git
 cd CCSnapshot
 git submodule update --init
 ```
+
+Your fork is where your snapshot lives. Run collect to populate it, commit, and push — your Claude Code settings are now versioned and available from any machine.
+
+### Collecting Settings (Source Machine)
+
+```bash
+./scripts/collect.sh
+git add snapshot/
+git commit -m "Update snapshot"
+git push
+```
+
+### Restoring Settings (Destination Machine)
+
+```bash
+git clone git@github.com:<your-username>/CCSnapshot.git
+cd CCSnapshot
+git submodule update --init
+./scripts/propagate.sh
+```
+
+The propagate script copies your settings into place, then launches Claude to handle environment-specific adaptation (shell config merging, secrets setup, path fixups).
 
 ## Architecture
 
