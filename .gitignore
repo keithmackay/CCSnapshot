@@ -1,3 +1,5 @@
 .DS_Store
 session_stats.md
 *.bak
+snapshot/history/
+ccsnapshot-*.tar.gz

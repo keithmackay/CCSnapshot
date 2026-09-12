@@ -9,6 +9,7 @@ OUTPUT_DIR="${CCSNAPSHOT_OUTPUT_DIR:-./snapshot}"
 # --- Argument parsing ---
 
 PROJECT_PATHS=()
+INCLUDE_HISTORY=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -20,6 +21,10 @@ while [[ $# -gt 0 ]]; do
         echo "Error: --project requires a path argument" >&2
         exit 1
       fi
+      ;;
+    --include-history)
+      INCLUDE_HISTORY=true
+      shift
       ;;
     *)
       echo "Unknown option: $1" >&2
@@ -87,6 +92,28 @@ collect_plugins() {
   if [[ -d "$plugins_dir" ]] && [[ -n "$(ls -A "$plugins_dir" 2>/dev/null)" ]]; then
     rsync -a --exclude '.DS_Store' "${plugins_dir}/" "${OUTPUT_DIR}/plugins/"
   fi
+}
+
+# --- Conversation history collection ---
+
+collect_history() {
+  if [[ "$INCLUDE_HISTORY" != true ]]; then
+    return 0
+  fi
+
+  local projects_dir="${HOME}/.claude/projects"
+
+  if [[ ! -d "$projects_dir" ]]; then
+    return 0
+  fi
+
+  mkdir -p "${OUTPUT_DIR}/history"
+  rsync -a --exclude '.DS_Store' "${projects_dir}/" "${OUTPUT_DIR}/history/"
+
+  echo "Warning: history/ contains full conversation transcripts (JSONL) and may include" >&2
+  echo "pasted secrets, credentials, or proprietary content from past sessions." >&2
+  echo "It is excluded from git via .gitignore. Use ./scripts/archive.sh for local-only" >&2
+  echo "transfer instead of committing it." >&2
 }
 
 # --- Shell fragment extraction ---
@@ -237,6 +264,10 @@ generate_manifest() {
     artifacts=$(echo "$artifacts" | jq '.plugins = true')
   fi
 
+  if [[ -d "${OUTPUT_DIR}/history" ]]; then
+    artifacts=$(echo "$artifacts" | jq '.history = true')
+  fi
+
   if [[ -d "${OUTPUT_DIR}/shell-fragments" ]]; then
     local frag_files
     frag_files=$(ls "${OUTPUT_DIR}/shell-fragments/" 2>/dev/null | jq -R . | jq -s .)
@@ -285,6 +316,7 @@ print_summary() {
   local cmd_count=0
   local skill_count=0
   local plugin_status="-"
+  local history_status="-"
   local fragment_count=0
   local project_count=0
   local secret_count=0
@@ -301,6 +333,9 @@ print_summary() {
   if [[ -d "${OUTPUT_DIR}/plugins" ]]; then
     plugin_status="collected"
   fi
+  if [[ -d "${OUTPUT_DIR}/history" ]]; then
+    history_status="collected"
+  fi
   if [[ -d "${OUTPUT_DIR}/shell-fragments" ]]; then
     fragment_count=$(ls "${OUTPUT_DIR}/shell-fragments/" 2>/dev/null | wc -l | tr -d ' ')
   fi
@@ -315,6 +350,7 @@ print_summary() {
   echo "  Commands:        ${cmd_count} files"
   echo "  Skills:          ${skill_count} directories"
   echo "  Plugins:         ${plugin_status}"
+  echo "  History:         ${history_status}"
   echo "  Shell fragments: ${fragment_count} files"
   echo "  Projects:        ${project_count}"
   if [[ "$secret_count" -gt 0 ]]; then
@@ -334,6 +370,7 @@ collect_global_config
 collect_commands
 collect_skills
 collect_plugins
+collect_history
 collect_shell_fragments
 collect_projects
 generate_manifest

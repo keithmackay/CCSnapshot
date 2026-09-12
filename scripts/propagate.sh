@@ -6,6 +6,7 @@ set -euo pipefail
 
 INPUT_DIR="${CCSNAPSHOT_INPUT_DIR:-./snapshot}"
 MECHANICAL_ONLY=false
+ARCHIVE_PATH=""
 
 # --- Argument parsing ---
 
@@ -15,6 +16,15 @@ while [[ $# -gt 0 ]]; do
       MECHANICAL_ONLY=true
       shift
       ;;
+    --archive)
+      if [[ -n "${2:-}" ]]; then
+        ARCHIVE_PATH="$2"
+        shift 2
+      else
+        echo "Error: --archive requires a path argument" >&2
+        exit 1
+      fi
+      ;;
     *)
       echo "Unknown option: $1" >&2
       exit 1
@@ -22,11 +32,24 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# --- Archive extraction ---
+
+if [[ -n "$ARCHIVE_PATH" ]]; then
+  if [[ ! -f "$ARCHIVE_PATH" ]]; then
+    echo "Error: archive not found: $ARCHIVE_PATH" >&2
+    exit 1
+  fi
+
+  rm -rf "$INPUT_DIR"
+  mkdir -p "$INPUT_DIR"
+  tar -xzf "$ARCHIVE_PATH" -C "$INPUT_DIR"
+fi
+
 # --- Validation ---
 
 if [[ ! -f "${INPUT_DIR}/manifest.json" ]]; then
   echo "Error: manifest.json not found in ${INPUT_DIR}" >&2
-  echo "Run collect.sh first to create a snapshot." >&2
+  echo "Run collect.sh first to create a snapshot, or pass --archive <path>." >&2
   exit 1
 fi
 
@@ -89,6 +112,17 @@ restore_plugins() {
   fi
 }
 
+restore_history() {
+  local history_dir="${INPUT_DIR}/history"
+
+  if [[ ! -d "$history_dir" ]] || [[ -z "$(ls -A "$history_dir" 2>/dev/null)" ]]; then
+    return 0
+  fi
+
+  mkdir -p "${HOME}/.claude/projects"
+  rsync -a --exclude '.DS_Store' "${history_dir}/" "${HOME}/.claude/projects/"
+}
+
 # --- Shell fragment display ---
 
 display_shell_fragments() {
@@ -124,6 +158,7 @@ print_summary() {
   local cmd_count=0
   local skill_count=0
   local plugin_status="-"
+  local history_status="-"
   local backup_count=0
 
   if [[ -d "${HOME}/.claude" ]]; then
@@ -144,6 +179,9 @@ print_summary() {
   if [[ -d "${INPUT_DIR}/plugins" ]]; then
     plugin_status="restored"
   fi
+  if [[ -d "${INPUT_DIR}/history" ]] && [[ -n "$(ls -A "${INPUT_DIR}/history" 2>/dev/null)" ]]; then
+    history_status="restored"
+  fi
 
   echo ""
   echo "CCSnapshot: Propagation complete (mechanical)"
@@ -151,6 +189,7 @@ print_summary() {
   echo "  Commands:        ${cmd_count} files restored"
   echo "  Skills:          ${skill_count} directories restored"
   echo "  Plugins:         ${plugin_status}"
+  echo "  History:         ${history_status}"
   if [[ "$backup_count" -gt 0 ]]; then
     echo "  Backups:         ${backup_count} files backed up (.bak)"
   fi
@@ -198,6 +237,7 @@ restore_global_config
 restore_commands
 restore_skills
 restore_plugins
+restore_history
 display_shell_fragments
 print_summary
 invoke_claude_agent
