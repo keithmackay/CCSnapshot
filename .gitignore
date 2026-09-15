@@ -1,5 +1,6 @@
 .DS_Store
 session_stats.md
 *.bak
-snapshot/history/
+snapshot/*
+!snapshot/.gitkeep
 ccsnapshot-*.tar.gz

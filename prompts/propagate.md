@@ -39,7 +39,18 @@ Read the files in `snapshot/shell-fragments/`. For each fragment file:
 4. Skip lines that are already present (avoid duplicates)
 5. Show the user what was added
 
-### 4. Guide Secrets Setup
+### 4. Reconcile Conflicting Memory/Notes Files
+
+The mechanical phase backs up any markdown file under `~/.claude/projects/` (project memory notes, e.g. `memory/MEMORY.md`) where the local version differed from the incoming snapshot's version — the incoming version is now live, and the local version is saved alongside it as `<file>.md.bak`.
+
+1. Find all conflicts: `find ~/.claude/projects -name '*.md.bak'`
+2. For each one, read both the live file and its `.bak` counterpart
+3. Produce a merged version that keeps information unique to either side; where the two genuinely conflict (contradictory facts or instructions), the incoming (current live file) version takes precedence
+4. Write the merged result back to the live file
+5. Leave the `.bak` file in place — don't delete it, it's the user's record of what the local version said before merging
+6. Show the user a short summary of what was merged and where the incoming version overrode a local conflict, so they can double check nothing important was lost
+
+### 5. Guide Secrets Setup
 
 Read the `secretsNeeded` array from the manifest. For each entry:
 
@@ -48,7 +59,7 @@ Read the `secretsNeeded` array from the manifest. For each entry:
 - **netrc entries**: "Your source machine had credentials in ~/.netrc for <machine>. Set up equivalent entries on this machine."
 - **Other tokens**: Explain what the token name suggests and where to look for it.
 
-### 5. Health Check
+### 6. Health Check
 
 After everything is set up, verify:
 
