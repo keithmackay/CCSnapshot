@@ -454,6 +454,75 @@ print_summary() {
   fi
 }
 
+# --- Review file ---
+
+# Write everything that needs a human look (skipped entries, unresolved
+# skill links, markdown conflicts) to a plain-text file, since the terminal
+# output otherwise only exists for the length of this run.
+write_review_file() {
+  local out="$1"
+
+  {
+    echo "CCSnapshot: Propagation review — $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    echo ""
+
+    if [[ "${#MD_CONFLICTS[@]}" -gt 0 ]]; then
+      echo "Memory/notes files with local edits:"
+      local file
+      for file in "${MD_CONFLICTS[@]}"; do
+        echo "  ${file}"
+        echo "    review: diff \"${file}.bak\" \"${file}\""
+      done
+      echo ""
+    fi
+
+    if [[ "${#SKIPPED_ENTRIES[@]}" -gt 0 ]]; then
+      echo "Skipped entries (symlink/directory type conflict — local kept):"
+      local entry
+      for entry in "${SKIPPED_ENTRIES[@]}"; do
+        echo "  ${entry}"
+      done
+      echo ""
+    fi
+
+    if [[ "${#RELINKED_SKILLS[@]}" -gt 0 ]]; then
+      echo "Skills re-linked to their equivalent local target:"
+      for entry in "${RELINKED_SKILLS[@]}"; do
+        echo "  ${entry}"
+      done
+      echo ""
+    fi
+
+    if [[ "${#MISSING_SKILL_LINKS[@]}" -gt 0 ]]; then
+      echo "Skills that were symlinks on the source machine but have no equivalent here:"
+      for entry in "${MISSING_SKILL_LINKS[@]}"; do
+        echo "  ${entry}"
+      done
+      echo ""
+    fi
+  } > "$out"
+
+  echo "Review written to: ${out}"
+}
+
+# Ask before writing anything — but only when there's something worth
+# reviewing, and only when a human is actually at the terminal to answer.
+prompt_write_review() {
+  if [[ "${#MD_CONFLICTS[@]}" -eq 0 ]] && [[ "${#SKIPPED_ENTRIES[@]}" -eq 0 ]] && [[ "${#MISSING_SKILL_LINKS[@]}" -eq 0 ]]; then
+    return 0
+  fi
+
+  [[ -t 0 ]] || return 0
+
+  local answer
+  read -r -p "Write the items above to a file for later review? [y/N] " answer
+  [[ "$answer" =~ ^[Yy]$ ]] || return 0
+
+  local host
+  host=$(hostname -s 2>/dev/null || echo "machine")
+  write_review_file "./ccsnapshot-review-${host}-$(date -u +"%Y%m%d-%H%M%S").txt"
+}
+
 # --- Claude agent invocation ---
 
 invoke_claude_agent() {
@@ -498,4 +567,5 @@ display_shell_fragments
 display_markdown_conflicts
 display_skill_links
 print_summary
+prompt_write_review
 invoke_claude_agent

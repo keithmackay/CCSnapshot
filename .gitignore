@@ -4,3 +4,4 @@ session_stats.md
 snapshot/*
 !snapshot/.gitkeep
 ccsnapshot-*.tar.gz
+ccsnapshot-review-*.txt
