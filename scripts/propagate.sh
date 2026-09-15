@@ -7,6 +7,7 @@ set -euo pipefail
 INPUT_DIR="${CCSNAPSHOT_INPUT_DIR:-./snapshot}"
 MECHANICAL_ONLY=false
 ARCHIVE_PATH=""
+NO_REVIEW_FILE=false
 MD_CONFLICTS=()
 SKIPPED_ENTRIES=()
 RELINKED_SKILLS=()
@@ -28,6 +29,10 @@ while [[ $# -gt 0 ]]; do
         echo "Error: --archive requires a path argument" >&2
         exit 1
       fi
+      ;;
+    --no-review-file)
+      NO_REVIEW_FILE=true
+      shift
       ;;
     *)
       echo "Unknown option: $1" >&2
@@ -505,18 +510,22 @@ write_review_file() {
   echo "Review written to: ${out}"
 }
 
-# Ask before writing anything — but only when there's something worth
-# reviewing, and only when a human is actually at the terminal to answer.
+# Write review items to a file when there's something worth reviewing.
+# With a human at the terminal, ask first. Without one (e.g. run from a
+# script or agent), there's no one to ask — write it automatically so the
+# items aren't lost to scrollback, unless --no-review-file said not to.
 prompt_write_review() {
   if [[ "${#MD_CONFLICTS[@]}" -eq 0 ]] && [[ "${#SKIPPED_ENTRIES[@]}" -eq 0 ]] && [[ "${#MISSING_SKILL_LINKS[@]}" -eq 0 ]]; then
     return 0
   fi
 
-  [[ -t 0 ]] || return 0
+  [[ "$NO_REVIEW_FILE" == true ]] && return 0
 
-  local answer
-  read -r -p "Write the items above to a file for later review? [y/N] " answer
-  [[ "$answer" =~ ^[Yy]$ ]] || return 0
+  if [[ -t 0 ]]; then
+    local answer
+    read -r -p "Write the items above to a file for later review? [y/N] " answer
+    [[ "$answer" =~ ^[Yy]$ ]] || return 0
+  fi
 
   local host
   host=$(hostname -s 2>/dev/null || echo "machine")
