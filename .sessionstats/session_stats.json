@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "rows": [
+    {
+      "sessionId": "b326d5d4-31b8-4e3b-8e4d-2484d784b6a6",
+      "project": "CCXfer",
+      "event": "START",
+      "timestamp": "2026-02-06T22:21:28.858Z",
+      "duration": null,
+      "models": [],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    },
+    {
+      "sessionId": "b326d5d4-31b8-4e3b-8e4d-2484d784b6a6",
+      "project": "CCXfer",
+      "event": "END",
+      "timestamp": "2026-02-06T23:21:03.096Z",
+      "duration": "00:59:34",
+      "models": [
+        {
+          "model": "claude-opus-4-5-20251101",
+          "input": null,
+          "output": null,
+          "cacheRead": null,
+          "cacheWrite": null,
+          "cost": 12.87
+        }
+      ],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    },
+    {
+      "sessionId": "4b6a8eb4-c32d-4d5b-85ff-249d05cce72f",
+      "project": "CCXfer",
+      "event": "START",
+      "timestamp": "2026-02-06T23:21:08.191Z",
+      "duration": null,
+      "models": [],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    },
+    {
+      "sessionId": "4b6a8eb4-c32d-4d5b-85ff-249d05cce72f",
+      "project": "CCXfer",
+      "event": "END",
+      "timestamp": "2026-02-07T01:07:32.138Z",
+      "duration": "01:46:23",
+      "models": [
+        {
+          "model": "claude-opus-4-5-20251101",
+          "input": null,
+          "output": null,
+          "cacheRead": null,
+          "cacheWrite": null,
+          "cost": 12.87
+        }
+      ],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    },
+    {
+      "sessionId": "c64a412b-cf5c-4296-951d-d56d5dab6887",
+      "project": "CCXfer",
+      "event": "START",
+      "timestamp": "2026-02-07T01:07:39.899Z",
+      "duration": null,
+      "models": [],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    },
+    {
+      "sessionId": "c64a412b-cf5c-4296-951d-d56d5dab6887",
+      "project": "CCXfer",
+      "event": "END",
+      "timestamp": "2026-02-07T01:14:01.361Z",
+      "duration": "00:06:21",
+      "models": [
+        {
+          "model": "claude-opus-4-5-20251101",
+          "input": null,
+          "output": null,
+          "cacheRead": null,
+          "cacheWrite": null,
+          "cost": 12.87
+        }
+      ],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    },
+    {
+      "sessionId": "d4458412-1b3f-45a7-a1bd-67de43087087",
+      "project": "CCSnapshot",
+      "event": "END",
+      "timestamp": "2026-02-07T02:19:08.885Z",
+      "duration": null,
+      "models": [
+        {
+          "model": "claude-opus-4-5-20251101",
+          "input": null,
+          "output": null,
+          "cacheRead": null,
+          "cacheWrite": null,
+          "cost": 12.87
+        }
+      ],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[No Start Found] [Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    },
+    {
+      "sessionId": "8617eafa-f442-4957-9249-9c7a6f85d74f",
+      "project": "CCSnapshot",
+      "event": "START",
+      "timestamp": "2026-02-07T04:02:23.380Z",
+      "duration": null,
+      "models": [],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    },
+    {
+      "sessionId": "8617eafa-f442-4957-9249-9c7a6f85d74f",
+      "project": "CCSnapshot",
+      "event": "END",
+      "timestamp": "2026-02-07T05:21:49.062Z",
+      "duration": "01:19:25",
+      "models": [
+        {
+          "model": "claude-opus-4-5-20251101",
+          "input": null,
+          "output": null,
+          "cacheRead": null,
+          "cacheWrite": null,
+          "cost": 12.87
+        }
+      ],
+      "apiMessages": null,
+      "userMessages": null,
+      "toolCalls": null,
+      "subagentCount": null,
+      "cacheHitRate": null,
+      "flags": "[Migrated]",
+      "machineId": "Keith.MacKay@XMHM9K7GC5VJ"
+    }
+  ]
+}
